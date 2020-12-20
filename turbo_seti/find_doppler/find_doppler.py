@@ -144,8 +144,10 @@ class FindDoppler:
             logger.info('Appending DAT and LOG files')
         else:
             logger.info('Recreating DAT and LOG files')
-            os.remove(path_log)
-            os.remove(path_dat)
+            if os.path.exists(path_log):
+                os.remove(path_log)
+            if os.path.exists(path_dat):
+                os.remove(path_dat)
         logwriter = LogWriter(path_log)
         filewriter = FileWriter(path_dat, header_in)
 
