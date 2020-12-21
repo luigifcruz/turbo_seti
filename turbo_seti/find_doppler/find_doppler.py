@@ -15,8 +15,8 @@ from .merge_dats_logs import merge_dats_logs
 
 #For debugging
 #import pdb;# pdb.set_trace()
-
-logger = logging.getLogger('find_doppler')
+logger_name = 'find_doppler'
+logger = logging.getLogger(logger_name)
 
 class max_vals:
     r"""
@@ -205,7 +205,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     directly, but rather via the `FindDoppler.search()` or `FindDoppler.search_dask()` routines.
 
     """
-
+    global logger
+    
     d = data_dict
     fd = find_doppler_instance
 
@@ -217,6 +218,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     snr = fd.snr
     obs_info = fd.obs_info
     flagging = fd.flagging
+    coarse_channel = d['coarse_chan']
+    logger = logging.getLogger(logger_name + '.' + str(coarse_channel))
 
     if dataloader:
         data_obj, spectra, drift_indices = dataloader.get()
@@ -225,9 +228,9 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
 
     fileroot_out = filename_in.split('/')[-1].replace('.h5', '').replace('.fits', '').replace('.fil', '')
     if logwriter is None:
-        logwriter = LogWriter('%s/%s_%i.log' % (out_dir.rstrip('/'), fileroot_out, d['coarse_chan']))
+        logwriter = LogWriter('%s/%s_%i.log' % (out_dir.rstrip('/'), fileroot_out, coarse_channel))
     if filewriter is None:
-        filewriter = FileWriter('%s/%s_%i.dat' % (out_dir.rstrip('/'), fileroot_out, d['coarse_chan']), header_in)
+        filewriter = FileWriter('%s/%s_%i.dat' % (out_dir.rstrip('/'), fileroot_out, coarse_channel), header_in)
 
     spectra_flipped = fd.kernels.xp.copy(spectra)[:, ::-1]
     tsteps = data_obj.tsteps
@@ -237,8 +240,8 @@ def search_coarse_channel(data_dict, find_doppler_instance, dataloader=None, log
     nframes = tsteps_valid
     shoulder_size = data_obj.shoulder_size
 
-    logger.debug('flagging={}, spectra_flipped={}, tsteps={}, tsteps_valid={}, tdwidth={}, fftlen={}, nframes={}, shoulder_size={}'
-                 .format(flagging, spectra_flipped, tsteps, tsteps_valid, tdwidth, fftlen, nframes, shoulder_size))
+    logger.debug('coarse_channel={}, flagging={}, spectra_flipped={}, tsteps={}, tsteps_valid={}, tdwidth={}, fftlen={}, nframes={}, shoulder_size={}'
+                 .format(coarse_channel, flagging, spectra_flipped, tsteps, tsteps_valid, tdwidth, fftlen, nframes, shoulder_size))
 
     if flagging:
         ##EE This flags the edges of the PFF for BL data (with 3Hz res per channel).
@@ -454,6 +457,8 @@ def hitsearch(fd, spectrum, specstart, specend, hitthresh, drift_rate, header, t
         Used to flag whether fine channel should be reversed.
 
     """
+    global logger
+    
     logger.debug('Start searching for hits at drift rate: %f' % drift_rate)
 
     if fd.kernels.gpu_backend:
@@ -521,6 +526,8 @@ def tophitsearch(fd, tree_findoppler_original, max_val, tsteps, header, tdwidth,
         Same filewriter that was input.
 
     """
+    global logger
+    
     maxsnr = max_val.maxsnr
     logger.debug("original matrix size: %d\t(%d, %d)" % (len(tree_findoppler_original), tsteps, tdwidth))
     logger.debug("tree_orig shape: %s"%str((tsteps, tdwidth)))
